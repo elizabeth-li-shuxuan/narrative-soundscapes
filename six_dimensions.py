@@ -1,6 +1,6 @@
 # Elizabeth Li 5/12/2025
-# input text
-# and get six dimensions: valence, arousal, dominance, subjectivity, sentiment variation, emotion idensity
+# input text and get 
+# six dimensions: valence, arousal, dominance, subjectivity, variation (how much sentiment shifts across clauses), density (proportion of explicitly emotional words in the text)
 
 import csv
 from textblob import TextBlob
@@ -76,14 +76,13 @@ def compute_lexical_density(text):
 # 7. Master analysis function
 def analyze_text(text, vad_path=lexicon):
     vad_lex = load_vad_lexicon(vad_path)
-    features = compute_vad(text, vad_lex)           # Valence, Arousal, Dominance :contentReference[oaicite:4]{index=4} 
+    features = compute_vad(text, vad_lex)           # Valence, Arousal, Dominance
     features['subjectivity'] = compute_subjectivity(text)
     features['variation'] = compute_sentiment_variation(text)
-    features['lexical_density'] = compute_lexical_density(text)
+    features['density'] = compute_lexical_density(text)
     return features
 
 if __name__ == "__main__":
-    input = input
     results = analyze_text(input)
     for k, v in results.items():
         print(f"{k}: {v}")
