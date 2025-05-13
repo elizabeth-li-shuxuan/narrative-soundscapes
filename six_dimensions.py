@@ -84,5 +84,5 @@ def analyze_text(text, vad_path=lexicon):
 
 if __name__ == "__main__":
     results = analyze_text(input)
-    for k, v in results.items():
-        print(f"{k}: {v}")
+    results_output = {k: float(v) * 2 - 1 for k, v in results.items()} #convert to -1 to 1
+    print(results_output)
