@@ -9,7 +9,9 @@ from nrclex import NRCLex
 import re
 
 lexicon = '/Users/elizabethli/Desktop/School/mus14/narrative-soundscapes/NRC-VAD-Lexicon-v2.1.csv'
-input = "I love sunny days, but sometimes I feel anxious when it's too bright. I just want to enjoy the weather without worrying about my skin. It's a constant battle between wanting to be outside and protecting myself from the sun. I wish I could find a balance that makes me happy."
+#input = "I love you. I love you so much."
+#input = "I love you. I hate you."
+input = "I'm ecstatic. I'm devastated"
 
 def load_vad_lexicon(filepath=lexicon):
     vad = {}
@@ -61,10 +63,14 @@ def split_clauses(text: str) -> list[str]:
     """Split text into clauses based on punctuation and conjunctions."""
     return [part.strip() for part in CL_SPLIT.split(text) if part.strip()]
 
-def compute_sentiment_variation(text):
+def compute_sentiment_variation(text, vad_lex):
     clauses = split_clauses(text)
-    scores = [TextBlob(clause).sentiment.polarity for clause in clauses]
-    return float(np.std(scores)) if len(scores) > 1 else 0.0
+    clause_vals = []
+    for clause in clauses:
+        tokens = [w.strip('.,!?;:').lower() for w in clause.split()]
+        vals = [vad_lex[t]['valence'] for t in tokens if t in vad_lex]
+        clause_vals.append(np.mean(vals) if vals else 0.0)
+    return float(np.std(clause_vals)) if len(clause_vals) > 1 else 0.0
 
 # 6. Emotional lexical density (LIWC-style count of emotion words)
 def compute_lexical_density(text):
@@ -78,11 +84,14 @@ def analyze_text(text, vad_path=lexicon):
     vad_lex = load_vad_lexicon(vad_path)
     features = compute_vad(text, vad_lex)           # Valence, Arousal, Dominance
     features['subjectivity'] = compute_subjectivity(text)
-    features['variation'] = compute_sentiment_variation(text)
+    features['variation'] = compute_sentiment_variation(text, vad_lex)
     features['density'] = compute_lexical_density(text)
+
+    features = {k: float(v) for k, v in features.items()} #remove the "np.float" outputs
+
     return features
 
 if __name__ == "__main__":
     results = analyze_text(input)
-    results_output = {k: float(v) * 2 - 1 for k, v in results.items()} #convert to -1 to 1
-    print(results_output)
+    results['valence'] = float(results['valence'] * 2 - 1) #convert valence to -1 to 1
+    print(results)
