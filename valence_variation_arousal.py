@@ -4,7 +4,7 @@ from pyo import Server, Sine, Adsr, Pattern
 from six_dimensions import analyze_text
 import random
 
-TEXT = "I'm ecstatic! I'm sad."
+TEXT = "I'm ecstatic! I'm sad. I'm happy."
 
 #1. configuration ─────────────────────────────────────────────────────────────────────────────
 # variation - volume
@@ -46,7 +46,7 @@ def map_variation(variation):
     chord_vol = CHORD_VOL_MAX - variation * (CHORD_VOL_MAX - CHORD_VOL_MIN)
     note_vol  = NOTES_VOL_MIN + variation * (NOTES_VOL_MAX - NOTES_VOL_MIN)
     return chord_vol, note_vol
-CHORD_VOL, NOTES_VOL = map_variation(variation)
+chord_vol, note_vol = map_variation(variation)
 
 # arousal = tempo
 def map_arousal(arousal):
@@ -61,11 +61,16 @@ def map_dominance(dominance, chord, note_index):
         return chord[note_index[0]]
     else:
         return random.choice(chord)
-    
+
+#subjectivity = how long each note is played
 def map_subjectivity(subjectivity, min_release=0.1, max_release=1.0):
     return min_release + subjectivity * (max_release - min_release)
-#release = map_subjectivity(subjectivity)
-release = 0.9
+subjectivity = map_subjectivity(subjectivity)
+attack  = 0.005 + subjectivity * (0.05  - 0.005)
+decay   = 0.05  + subjectivity * (0.5   - 0.05)
+sustain = 0.2   + subjectivity * (0.8   - 0.2)
+release = 0.05   + subjectivity * (1.0   - 0.05)
+duration = release + 1
 
 
 #4. Setup pyo ─────────────────────────────────────────────────────────────────────────────
@@ -77,8 +82,8 @@ s.start()
 #5. background music 
 left_background, right_background = [], []
 for note in chord: #for 0 in [0,4,7]
-    left_background.append(Sine(freq=note, mul=CHORD_VOL).out(chnl=0) )
-    right_background.append(Sine(freq=note, mul=CHORD_VOL).out(chnl=1) )
+    left_background.append(Sine(freq=note, mul=chord_vol).out(chnl=0) )
+    right_background.append(Sine(freq=note, mul=chord_vol).out(chnl=1) )
 
 #6. set "melody" notes
 mel_idx     = [0]
@@ -90,9 +95,9 @@ def play_melody():
     freq = map_dominance(dominance, chord, note_index)
     
     # Trigger envelope
-    #env = Adsr(release=release, mul=NOTES_VOL)
-    env = Adsr(attack=0.01, decay=0.05, sustain=0.6, release=release,
-           dur=0.3, mul=NOTES_VOL)
+    #env = Adsr(release=release, mul=NOTE_VOL)
+    env = Adsr(attack=attack, decay=decay, sustain=sustain, release=release, dur=duration, mul=note_vol)
+    #env = Adsr(attack=0.01, decay=0.05, sustain=0.6, release=release, dur=duration, mul=NOTE_VOL)
     env.play()
 
     # Play melody
@@ -113,9 +118,11 @@ def play_melody():
 melody = Pattern(play_melody, time=tempo)
 melody.play()
 
-print(f"Valence={valence:.2f}, variation={variation:.2f}, "
-      f"arousal={arousal:.2f}, interval≈{tempo:.2f}s "
-      f"(±{TEMPO_JITTER * 100:.0f}% jitter)")
+print(f"valence={valence:.2f}, chord={chord}")
+print(f"variation={variation:.2f}, background chord volumne={chord_vol:.2f}, notes volume={note_vol:.2f}")
+print(f"arousal={arousal:.2f}, tempo={tempo:.2f}")
+print(f"dominance={dominance:.2f}")
+print(f"subjectivity={subjectivity:.2f}")
 print("Now playing")
 
 # 8) Keep GUI alive
