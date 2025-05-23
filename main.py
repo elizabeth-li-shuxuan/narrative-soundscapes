@@ -119,7 +119,7 @@ melody = Pattern(play_melody, time=tempo)
 melody.play()
 
 print(f"valence={valence:.2f}, chord={chord}")
-print(f"variation={variation:.2f}, background chord volumne={chord_vol:.2f}, notes volume={note_vol:.2f}")
+print(f"variation={variation:.2f}, background chord volume={chord_vol:.2f}, notes volume={note_vol:.2f}")
 print(f"arousal={arousal:.2f}, tempo={tempo:.2f}")
 print(f"dominance={dominance:.2f}")
 print(f"subjectivity={subjectivity:.2f}")
