@@ -9,8 +9,6 @@ from nrclex import NRCLex
 import re
 
 lexicon = '/Users/elizabethli/Desktop/School/mus14/narrative-soundscapes/NRC-VAD-Lexicon-v2.1.csv'
-#input = "I love you. I love you so much."
-#input = "I love you. I hate you."
 input = "I'm ecstatic. I'm devastated"
 
 def load_vad_lexicon(filepath=lexicon):

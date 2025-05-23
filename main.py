@@ -4,7 +4,7 @@ from pyo import Server, Sine, Adsr, Pattern
 from six_dimensions import analyze_text
 import random
 
-TEXT = "I'm ecstatic! I'm sad. I'm happy."
+TEXT = input("Enter the text to sonify: ")
 
 #1. configuration ─────────────────────────────────────────────────────────────────────────────
 # variation - volume
@@ -123,7 +123,6 @@ print(f"variation={variation:.2f}, background chord volumne={chord_vol:.2f}, not
 print(f"arousal={arousal:.2f}, tempo={tempo:.2f}")
 print(f"dominance={dominance:.2f}")
 print(f"subjectivity={subjectivity:.2f}")
-print("Now playing")
 
 # 8) Keep GUI alive
 s.gui(locals())
