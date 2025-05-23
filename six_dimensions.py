@@ -9,7 +9,7 @@ from nrclex import NRCLex
 import re
 
 lexicon = '/Users/elizabethli/Desktop/School/mus14/narrative-soundscapes/NRC-VAD-Lexicon-v2.1.csv'
-input = "I'm ecstatic. I'm devastated"
+input = "This course will focus on practices of embodiment, listening, and sensing vibration. Our own bodies and voices, individual and collective, will be our primary sites of research and learning. The sonic practices we will do together are rooted in non-western, primarily South Asian traditions and philosophies of the voice and body, which, with my guidance, we will bring into a contemporary, living, and experimental shared space of inquiry and possibility."
 
 def load_vad_lexicon(filepath=lexicon):
     vad = {}
@@ -91,5 +91,4 @@ def analyze_text(text, vad_path=lexicon):
 
 if __name__ == "__main__":
     results = analyze_text(input)
-    results['valence'] = float(results['valence'] * 2 - 1) #convert valence to -1 to 1
     print(results)

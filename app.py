@@ -5,9 +5,9 @@ from six_dimensions import analyze_text
 import random
 
 # Configuration constantsx
-CHORD_VOL_MIN, CHORD_VOL_MAX = 0.01, 0.5
-NOTES_VOL_MIN, NOTES_VOL_MAX = 0.2, 3.0
-INTERVAL_MIN, INTERVAL_MAX = 0.1, 1.0
+CHORD_VOL_MIN, CHORD_VOL_MAX = 0.01, 0.4
+NOTES_VOL_MIN, NOTES_VOL_MAX = 1.0, 3.0
+INTERVAL_MIN, INTERVAL_MAX = 0.5, 4.0
 TEMPO_JITTER = 0.1
 ROOT_C4 = 261.63
 
@@ -22,12 +22,12 @@ def map_variation(variation):
     note_vol  = NOTES_VOL_MIN + variation * (NOTES_VOL_MAX - NOTES_VOL_MIN)
     return chord_vol, note_vol
 
-def map_arousal(arousal):
-    return INTERVAL_MAX - arousal * (INTERVAL_MAX - INTERVAL_MIN)
+def map_arousal(arousal_norm):
+    return INTERVAL_MAX - arousal_norm * (INTERVAL_MAX - INTERVAL_MIN)
 
 note_index = [0]
-def map_dominance(dominance, chord):
-    if random.random() < dominance:
+def map_dominance(dominance_norm, chord):
+    if random.random() < dominance_norm:
         note_index[0] = (note_index[0] + 1) % len(chord)
         return chord[note_index[0]]
     else:
@@ -47,7 +47,7 @@ class EmotionMusicApp:
         tk.Label(master, text="Input Text:", font=font).grid(row=0, column=0, sticky="w")
         self.text_entry = tk.Text(master, height=12, width=80, font=font)
         self.text_entry.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
-        self.text_entry.insert("1.0", "I love sunny days, but sometimes I feel anxious when it's too bright. I just want to enjoy the weather without worrying about my skin. It's a constant battle between wanting to be outside and protecting myself from the sun. I wish I could find a balance that makes me happy.")
+        self.text_entry.insert("1.0", "This course will focus on practices of embodiment, listening, and sensing vibration. Our own bodies and voices, individual and collective, will be our primary sites of research and learning. The sonic practices we will do together are rooted in non-western, primarily South Asian traditions and philosophies of the voice and body, which, with my guidance, we will bring into a contemporary, living, and experimental shared space of inquiry and possibility.")
 
         # Run button
         self.run_button = tk.Button(master, text="Play & Analyze", font=font, command=self.run_analysis)
@@ -68,7 +68,7 @@ class EmotionMusicApp:
         self.output_console.insert(tk.END, message + "\n")
         self.output_console.see(tk.END)
         self.output_console.config(state="disabled")
-
+ 
     def run_analysis(self):
         # Clear previous output
         self.output_console.config(state="normal")
@@ -83,38 +83,55 @@ class EmotionMusicApp:
         text = self.text_entry.get("1.0", tk.END).strip()
         features = analyze_text(text)
 
-        # Clamp features
-        valence = features['valence']
-        variation = max(0.0, min(features['variation'], 1.0))
-        arousal = max(0.0, min(features['arousal'], 1.0))
-        dominance = max(0.0, min(features['dominance'], 1.0))
-        subjectivity = max(0.0, min(features['subjectivity'], 1.0))
+        # 1) Clamp raw features to their true ranges
+        valence      = max(-1.0, min(features['valence'],    1.0))
+        arousal_raw  = max(-1.0, min(features['arousal'],    1.0))
+        dominance_raw= max(-1.0, min(features['dominance'],  1.0))
+        subjectivity = max(0.0,  min(features['subjectivity'], 1.0))
+        variation    = max(0.0,  min(features['variation'],    1.0))
+
+        # 2) Normalize arousal & dominance into [0,1] for your mappers
+        arousal_norm   = (arousal_raw   + 1) / 2
+        dominance_norm = (dominance_raw + 1) / 2
 
         # Map to musical parameters
-        chord = map_valence(valence)
-        chord_vol, note_vol = map_variation(variation)
-        tempo = map_arousal(arousal)
-        release = map_subjectivity(subjectivity)
-        attack = 0.005 + subjectivity * (0.05 - 0.005)
-        decay = 0.05 + subjectivity * (0.5 - 0.05)
-        sustain = 0.2 + subjectivity * (0.8 - 0.2)
-        dur = release + 1
+        chord       = map_valence(valence)
+        #chord_vol, note_vol = map_variation(variation)
+        chord_vol, note_vol = 0.02,3.9
+        tempo       = map_arousal(arousal_norm)
+        release     = map_subjectivity(subjectivity)
+        attack      = 0.005 + subjectivity * (0.05 - 0.005)
+        decay       = 0.05  + subjectivity * (0.5  - 0.05)
+        sustain     = 0.2   + subjectivity * (0.8  - 0.2)
+        dur         = release + 1
+
+        # background chord
+        if hasattr(self, 'background'):
+            for src in self.background:
+                src.stop()
+        self.background = []
+        for note in chord:
+            self.background.append(Sine(freq=note, mul=chord_vol).out(chnl=0))
+            self.background.append(Sine(freq=note, mul=chord_vol).out(chnl=1))
 
         # Log results
-        self.log(f"Valence = {valence:.2f}, Chord frequencies = {chord}")
-        self.log(f"Sentiment variation = {variation:.2f}, Background chord volume = {chord_vol:.2f}, Notes volume = {note_vol:.2f}")
-        self.log(f"Arousal = {arousal:.2f}, Tempo = {tempo:.2f}")
-        self.log(f"Dominance = {dominance:.2f}")
-        self.log(f"Subjectivity = {subjectivity:.2f}")
+        freqs_str = ", ".join(f"{freq:.0f}" for freq in chord)
+        self.log(f"Valence (–1 to 1) = {valence:.2f}, Chord frequencies = [{freqs_str}]")
+        self.log(f"Arousal (-1 to 1): {arousal_raw:.2f}, Tempo: {tempo:.2f}")
+        self.log(f"Dominance (-1 to 1):  {dominance_raw:.2f}")
+        self.log(f"Variation (0 to 1): {variation:.2f}, Background chord volume: {chord_vol:.2f}, Notes volume: {note_vol:.2f}")
+        self.log(f"Subjectivity (0 to 1): {subjectivity:.2f}, Attack = {attack:.3f}, Decay = {decay:.3f}, Sustain = {sustain:.2f}, Release = {release:.2f}")
 
         # Play melody
         left_melody = []
         right_melody = []
 
         def play_note():
-            freq = map_dominance(dominance, chord)
-            env = Adsr(attack=attack, decay=decay, sustain=sustain,
-                       release=release, dur=dur, mul=note_vol)
+            freq = map_dominance(dominance_norm, chord)
+            env = Adsr(
+                attack=attack, decay=decay, sustain=sustain,
+                release=release, dur=dur, mul=note_vol
+            )
             env.play()
             left_melody.append(Sine(freq=freq, mul=env).out(chnl=0))
             right_melody.append(Sine(freq=freq, mul=env).out(chnl=1))
@@ -123,6 +140,7 @@ class EmotionMusicApp:
                 old = right_melody.pop(0); old.stop()
 
         self.pattern = Pattern(play_note, time=tempo).play()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
