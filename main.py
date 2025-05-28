@@ -1,4 +1,5 @@
 # Elizabeth Li 5/13/2025
+# sentiment analysis and sonification
 
 from pyo import Server, Sine, Adsr, Pattern
 from six_dimensions import analyze_text

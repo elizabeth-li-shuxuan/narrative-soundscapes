@@ -1,10 +1,13 @@
+#Elizabeth Li 5/28/2025
+# sentiment analysis and sonification + UI
+
 import tkinter as tk
 from tkinter import scrolledtext
 from pyo import Server, Sine, Adsr, Pattern
 from six_dimensions import analyze_text
 import random
 
-# Configuration constantsx
+# Configuration constants
 CHORD_VOL_MIN, CHORD_VOL_MAX = 0.01, 0.4
 NOTES_VOL_MIN, NOTES_VOL_MAX = 1.0, 3.0
 INTERVAL_MIN, INTERVAL_MAX = 0.5, 4.0
